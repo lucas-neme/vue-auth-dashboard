@@ -13,7 +13,7 @@
             type="email"
             placeholder="voce@empresa.com"
             autocomplete="email"
-            :disabled="isLoading"
+            :disabled="authStore.isLoading"
             :aria-invalid="Boolean(errors.email)"
           />
           <small v-if="errors.email" class="field-error">{{ errors.email }}</small>
@@ -27,16 +27,16 @@
             type="password"
             placeholder="Digite sua senha"
             autocomplete="current-password"
-            :disabled="isLoading"
+            :disabled="authStore.isLoading"
             :aria-invalid="Boolean(errors.password)"
           />
           <small v-if="errors.password" class="field-error">{{ errors.password }}</small>
         </div>
 
-        <p v-if="submitError" class="submit-error" role="alert">{{ submitError }}</p>
+        <AppAlert v-if="submitError" :message="submitError" variant="error" />
 
-        <button type="submit" :disabled="isLoading" class="submit-btn">
-          {{ isLoading ? 'Entrando...' : 'Entrar' }}
+        <button type="submit" :disabled="authStore.isLoading" class="submit-btn">
+          {{ authStore.isLoading ? 'Entrando...' : 'Entrar' }}
         </button>
       </form>
     </div>
@@ -45,6 +45,9 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import AppAlert from '@/components/AppAlert.vue'
 
 type LoginForm = {
   email: string
@@ -66,8 +69,9 @@ const errors = reactive<FormErrors>({
   password: ''
 })
 
-const isLoading = ref(false)
 const submitError = ref('')
+const router = useRouter()
+const authStore = useAuthStore()
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -97,13 +101,14 @@ async function handleSubmit() {
     return
   }
 
-  isLoading.value = true
-
   try {
-    await new Promise((resolve) => setTimeout(resolve, 900))
-    submitError.value = 'Autenticação ainda não implementada. Esta é apenas a interface.'
-  } finally {
-    isLoading.value = false
+    await authStore.login({
+      email: form.email,
+      password: form.password
+    })
+    router.push('/dashboard')
+  } catch (error) {
+    submitError.value = error instanceof Error ? error.message : authStore.error || 'Falha ao autenticar.'
   }
 }
 </script>
@@ -174,8 +179,7 @@ input[aria-invalid='true'] {
   border-color: #dc2626;
 }
 
-.field-error,
-.submit-error {
+.field-error {
   margin: 0;
   font-size: 0.85rem;
   color: #dc2626;

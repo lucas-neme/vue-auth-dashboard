@@ -1,0 +1,40 @@
+import { beforeEach } from 'vitest'
+
+class LocalStorageMock implements Storage {
+  private storage = new Map<string, string>()
+
+  get length() {
+    return this.storage.size
+  }
+
+  clear() {
+    this.storage.clear()
+  }
+
+  getItem(key: string) {
+    return this.storage.has(key) ? this.storage.get(key)! : null
+  }
+
+  key(index: number) {
+    return Array.from(this.storage.keys())[index] ?? null
+  }
+
+  removeItem(key: string) {
+    this.storage.delete(key)
+  }
+
+  setItem(key: string, value: string) {
+    this.storage.set(key, String(value))
+  }
+}
+
+const localStorageMock = new LocalStorageMock()
+
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  writable: true
+})
+
+beforeEach(() => {
+  localStorage.clear()
+})
